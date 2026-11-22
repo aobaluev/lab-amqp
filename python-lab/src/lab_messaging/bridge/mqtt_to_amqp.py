@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import signal
 import time
 from typing import Optional
@@ -53,21 +54,10 @@ class Bridge:
         self._mqtt_client: Optional[mqtt.Client] = None
         self._amqp_client: Optional[AMQPClient] = None
         self._running = False
+        self._stopped = False
 
         self._heartbeat_mod = get_heartbeat_module(validation_mode)
         self._command_mod = get_command_module(validation_mode)
-
-# Install signal handlers for graceful shutdown (main thread only)
-        try:
-            signal.signal(signal.SIGINT, self._signal_handler)
-            signal.signal(signal.SIGTERM, self._signal_handler)
-        except ValueError:
-            # signal handlers can only be installed in the main thread
-            pass
-
-    def _signal_handler(self, signum, frame) -> None:
-        logger.info("Received signal %s, shutting down bridge...", signum)
-        self.stop()
 
     def connect(self) -> None:
         """Connect to both MQTT and AMQP brokers."""
@@ -217,25 +207,27 @@ class Bridge:
                 routing_key,
                 exc,
             )
-            # Do not ack / do not raise — the MQTT loop continues.
-            # The message is lost for this delivery; reconnection logic
-            # handles broker recovery.
 
     def run_forever(self) -> None:
         """Block until stop() is called."""
         if not self._running:
             raise RuntimeError("Bridge not connected")
         try:
-            while self._running:
+            while self._running and not self._stopped:
                 time.sleep(0.5)
-        except KeyboardInterrupt:
-            pass
         finally:
             self.stop()
 
     def stop(self) -> None:
-        """Stop the bridge and disconnect from both brokers."""
+        """Stop the bridge and disconnect from both brokers.
+
+        Idempotent — safe to call multiple times.
+        """
+        if self._stopped:
+            return
+        self._stopped = True
         self._running = False
+
         if self._mqtt_client is not None:
             try:
                 self._mqtt_client.loop_stop()
@@ -244,6 +236,44 @@ class Bridge:
                 logger.warning("Error stopping MQTT client: %s", exc)
             self._mqtt_client = None
         if self._amqp_client is not None:
-            self._amqp_client.stop()
+            try:
+                self._amqp_client.stop()
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Error stopping AMQP client: %s", exc)
             self._amqp_client = None
         logger.info("Bridge stopped")
+
+
+def main() -> None:
+    """Entry point for running the bridge as a script."""
+    import sys
+
+    logging.basicConfig(
+        level=getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO),
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    settings = Settings()
+    bridge = Bridge(settings, validation_mode=os.getenv("VALIDATION_MODE", "permissive"))
+
+    def _signal_handler(signum, frame) -> None:
+        logger.info("Received signal %s, shutting down bridge...", signum)
+        bridge.stop()
+        os._exit(0)
+
+    signal.signal(signal.SIGINT, _signal_handler)
+    signal.signal(signal.SIGTERM, _signal_handler)
+
+    try:
+        bridge.connect()
+        bridge.run_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        bridge.stop()
+    os._exit(0)
+
+
+if __name__ == "__main__":
+    main()

@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 import logging
-import signal
 import time
 import uuid
 from datetime import datetime, timezone
@@ -44,18 +43,31 @@ class AMQPClient:
         self._connection: Optional[pika.BlockingConnection] = None
         self._channel: Optional[pika.adapters.blocking_connection.BlockingChannel] = None
         self._running = False
+        self._stopped = False
 
-# Install signal handlers for graceful shutdown (main thread only)
-        try:
-            signal.signal(signal.SIGINT, self._signal_handler)
-            signal.signal(signal.SIGTERM, self._signal_handler)
-        except ValueError:
-            # signal handlers can only be installed in the main thread
-            pass
+    def stop(self) -> None:
+        """Stop the consumer and close the connection gracefully.
 
-    def _signal_handler(self, signum, frame) -> None:
-        logger.info("Received signal %s, shutting down...", signum)
-        self.stop()
+        Idempotent — safe to call multiple times.
+        """
+        if self._stopped:
+            return
+        self._stopped = True
+        self._running = False
+        if self._channel is not None:
+            try:
+                self._channel.stop_consuming()
+                self._channel.close()
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Error closing AMQP channel: %s", exc)
+            self._channel = None
+        if self._connection is not None:
+            try:
+                self._connection.close()
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Error closing AMQP connection: %s", exc)
+            self._connection = None
+        logger.info("AMQP client stopped")
 
     def connect(self) -> None:
         """Connect to RabbitMQ and set up exchange/queues."""
@@ -166,14 +178,6 @@ class AMQPClient:
             headers=headers,
         )
 
-        logger.info(
-            "AMQP publish exchange=%s routing_key=%s message_id=%s delivery_mode=%s",
-            EXCHANGE_NAME,
-            routing_key,
-            message_id,
-            delivery_mode,
-        )
-
         # In pika 1.x, basic_publish returns None. Publisher Confirms are enabled
         # via confirm_delivery(); delivery confirmations arrive asynchronously
         # through the on_delivery_confirmation callback. For this lab we log
@@ -232,27 +236,14 @@ class AMQPClient:
             self._channel.basic_nack(delivery_tag=delivery_tag, requeue=requeue)
             logger.warning("AMQP nacked delivery_tag=%s requeue=%s", delivery_tag, requeue)
 
-    def stop(self) -> None:
-        """Stop the consumer and close the connection gracefully."""
-        self._running = False
-        if self._channel is not None:
-            try:
-                self._channel.stop_consuming()
-                self._channel.close()
-            except Exception as exc:  # noqa: BLE001
-                logger.warning("Error closing AMQP channel: %s", exc)
-            self._channel = None
-        if self._connection is not None:
-            try:
-                self._connection.close()
-            except Exception as exc:  # noqa: BLE001
-                logger.warning("Error closing AMQP connection: %s", exc)
-            self._connection = None
-        logger.info("AMQP client stopped")
+
+def current_timestamp() -> float:
+    """Return current UTC epoch timestamp as float with up to 6 decimal places."""
+    return round(time.time(), 6)
 
 
-def current_timestamp() -> str:
-    """Return current UTC timestamp in ISO-8601 format with Z suffix."""
+def current_datetime() -> str:
+    """Return current UTC datetime in human-readable ISO-8601 format with Z suffix."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 

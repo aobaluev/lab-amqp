@@ -218,8 +218,13 @@ class MQTTClient:
             self.stop()
 
 
-def current_timestamp() -> str:
-    """Return current UTC timestamp in ISO-8601 format with Z suffix."""
+def current_timestamp() -> float:
+    """Return current UTC epoch timestamp as float with up to 6 decimal places."""
+    return round(time.time(), 6)
+
+
+def current_datetime() -> str:
+    """Return current UTC datetime in human-readable ISO-8601 format with Z suffix."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 

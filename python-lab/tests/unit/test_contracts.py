@@ -19,7 +19,13 @@ def _make_message_id() -> str:
     return str(uuid.uuid4())
 
 
-def _make_timestamp() -> str:
+def _make_timestamp() -> float:
+    import time
+
+    return round(time.time(), 6)
+
+
+def _make_datetime() -> str:
     from datetime import datetime, timezone
 
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -31,6 +37,7 @@ class TestHeartbeatV1Creation:
         msg = mod.make_heartbeat(
             message_id=_make_message_id(),
             timestamp=_make_timestamp(),
+            datetime=_make_datetime(),
             hostname="test-host",
             cpu_load=0.5,
             memory_used_percent=60.0,
@@ -45,6 +52,7 @@ class TestHeartbeatV1Creation:
         msg = mod.make_heartbeat(
             message_id=_make_message_id(),
             timestamp=_make_timestamp(),
+            datetime=_make_datetime(),
             hostname="test-host",
             cpu_load=0.5,
             memory_used_percent=60.0,
@@ -58,6 +66,7 @@ class TestHeartbeatV1Creation:
         msg = mod.make_command(
             message_id=_make_message_id(),
             timestamp=_make_timestamp(),
+            datetime=_make_datetime(),
             alias="status",
             arguments={},
         )
@@ -70,6 +79,7 @@ class TestHeartbeatV1Creation:
         msg = mod.make_command(
             message_id=_make_message_id(),
             timestamp=_make_timestamp(),
+            datetime=_make_datetime(),
             alias="ping",
             arguments={},
         )
@@ -83,6 +93,7 @@ class TestSerialization:
         msg = mod.make_heartbeat(
             message_id=_make_message_id(),
             timestamp=_make_timestamp(),
+            datetime=_make_datetime(),
             hostname="host",
             cpu_load=0.3,
             memory_used_percent=50.0,
@@ -97,6 +108,7 @@ class TestSerialization:
         msg = mod.make_command(
             message_id=_make_message_id(),
             timestamp=_make_timestamp(),
+            datetime=_make_datetime(),
             alias="get_metrics",
             arguments={"key": "value"},
         )
@@ -116,6 +128,7 @@ class TestPermissiveValidation:
         msg = mod.make_heartbeat(
             message_id=_make_message_id(),
             timestamp=_make_timestamp(),
+            datetime=_make_datetime(),
             hostname="host",
             cpu_load=0.5,
             memory_used_percent=60.0,
@@ -129,6 +142,7 @@ class TestPermissiveValidation:
         msg = mod.make_heartbeat(
             message_id=_make_message_id(),
             timestamp=_make_timestamp(),
+            datetime=_make_datetime(),
             hostname="host",
             cpu_load=0.5,
             memory_used_percent=60.0,
@@ -144,6 +158,7 @@ class TestPermissiveValidation:
         msg = mod.make_heartbeat(
             message_id=_make_message_id(),
             timestamp=_make_timestamp(),
+            datetime=_make_datetime(),
             hostname="host",
             cpu_load=0.5,
             memory_used_percent=60.0,
@@ -158,6 +173,7 @@ class TestPermissiveValidation:
         msg = mod.make_heartbeat(
             message_id=_make_message_id(),
             timestamp=_make_timestamp(),
+            datetime=_make_datetime(),
             hostname="host",
             cpu_load=0.5,
             memory_used_percent=60.0,
@@ -172,6 +188,7 @@ class TestPermissiveValidation:
         msg = mod.make_heartbeat(
             message_id=_make_message_id(),
             timestamp=_make_timestamp(),
+            datetime=_make_datetime(),
             hostname="host",
             cpu_load=0.5,
             memory_used_percent=60.0,
@@ -186,6 +203,7 @@ class TestPermissiveValidation:
         msg = mod.make_heartbeat(
             message_id=_make_message_id(),
             timestamp=_make_timestamp(),
+            datetime=_make_datetime(),
             hostname="host",
             cpu_load=0.5,
             memory_used_percent=60.0,
@@ -202,6 +220,7 @@ class TestStrictValidation:
         msg = mod.make_heartbeat(
             message_id=_make_message_id(),
             timestamp=_make_timestamp(),
+            datetime=_make_datetime(),
             hostname="host",
             cpu_load=0.5,
             memory_used_percent=60.0,
@@ -215,6 +234,7 @@ class TestStrictValidation:
         msg = mod.make_heartbeat(
             message_id=_make_message_id(),
             timestamp=_make_timestamp(),
+            datetime=_make_datetime(),
             hostname="host",
             cpu_load=0.5,
             memory_used_percent=60.0,
@@ -230,6 +250,7 @@ class TestStrictValidation:
             mod.make_heartbeat(
                 message_id=_make_message_id(),
                 timestamp=_make_timestamp(),
+                datetime=_make_datetime(),
                 hostname="host",
                 cpu_load=1.5,  # > 1.0, out of range
                 memory_used_percent=60.0,
@@ -242,6 +263,7 @@ class TestStrictValidation:
             mod.make_command(
                 message_id=_make_message_id(),
                 timestamp=_make_timestamp(),
+                datetime=_make_datetime(),
                 alias="nonexistent",
                 arguments={},
             )
@@ -255,6 +277,7 @@ class TestValidationModes:
         msg = perm.make_heartbeat(
             message_id=_make_message_id(),
             timestamp=_make_timestamp(),
+            datetime=_make_datetime(),
             hostname="host",
             cpu_load=0.5,
             memory_used_percent=60.0,

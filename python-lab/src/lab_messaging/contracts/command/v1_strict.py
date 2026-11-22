@@ -42,26 +42,28 @@ class CommandMessageV1(BaseModel):
     type: Literal[MESSAGE_TYPE_COMMAND]
     version: int = Field(ge=1, le=1)
     message_id: str = Field(min_length=1)
-    timestamp: str = Field(min_length=1)
+    timestamp: float = Field(ge=0)
+    datetime: str = Field(min_length=1)
     payload: CommandPayloadV1
 
     model_config = {"extra": "forbid"}
 
-    @field_validator("timestamp")
+    @field_validator("datetime")
     @classmethod
-    def _validate_timestamp(cls, v: str) -> str:
+    def _validate_datetime(cls, v: str) -> str:
         from datetime import datetime
 
         try:
             datetime.fromisoformat(v.replace("Z", "+00:00"))
         except ValueError:
-            raise ValueError("timestamp must be a valid ISO-8601 datetime")
+            raise ValueError("datetime must be a valid ISO-8601 datetime")
         return v
 
 
 def create_message(
     message_id: str,
-    timestamp: str,
+    timestamp: float,
+    datetime: str,
     alias: str,
     arguments: dict | None = None,
 ) -> dict:
@@ -71,6 +73,7 @@ def create_message(
         version=CONTRACT_VERSION_1,
         message_id=message_id,
         timestamp=timestamp,
+        datetime=datetime,
         payload={
             "alias": alias,
             "arguments": arguments if arguments is not None else {},

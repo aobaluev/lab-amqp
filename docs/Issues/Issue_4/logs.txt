@@ -1,0 +1,247 @@
+
+/home/user/lab-amqp/python-lab/scripts/run-command-sender.sh
+2026-11-22 16:05:31 INFO lab_messaging.amqp.client: AMQP connecting host=127.0.0.1 port=5672 user=lab_user vhost=/lab
+2026-11-22 16:05:31 INFO pika.adapters.utils.connection_workflow: Pika version 1.5.0 connecting to ('127.0.0.1', 5672)
+2026-11-22 16:05:31 INFO pika.adapters.utils.io_services_utils: Socket connected: <socket.socket fd=6, family=2, type=1, proto=6, laddr=('127.0.0.1', 43896), raddr=('127.0.0.1', 5672)>
+2026-11-22 16:05:31 INFO pika.adapters.utils.connection_workflow: Streaming transport linked up: (<pika.adapters.utils.io_services_utils._AsyncPlaintextTransport object at 0x79cda3523350>, _StreamingProtocolShim: <SelectConnection PROTOCOL transport=<pika.adapters.utils.io_services_utils._AsyncPlaintextTransport object at 0x79cda3523350> params=<URLParameters host=127.0.0.1 port=5672 virtual_host=/lab ssl=False>>).
+2026-11-22 16:05:31 INFO pika.adapters.utils.connection_workflow: AMQPConnector - reporting success: <SelectConnection OPEN transport=<pika.adapters.utils.io_services_utils._AsyncPlaintextTransport object at 0x79cda3523350> params=<URLParameters host=127.0.0.1 port=5672 virtual_host=/lab ssl=False>>
+2026-11-22 16:05:31 INFO pika.adapters.utils.connection_workflow: AMQPConnectionWorkflow - reporting success: <SelectConnection OPEN transport=<pika.adapters.utils.io_services_utils._AsyncPlaintextTransport object at 0x79cda3523350> params=<URLParameters host=127.0.0.1 port=5672 virtual_host=/lab ssl=False>>
+2026-11-22 16:05:31 INFO pika.adapters.blocking_connection: Connection workflow succeeded: <SelectConnection OPEN transport=<pika.adapters.utils.io_services_utils._AsyncPlaintextTransport object at 0x79cda3523350> params=<URLParameters host=127.0.0.1 port=5672 virtual_host=/lab ssl=False>>
+2026-11-22 16:05:31 INFO pika.adapters.blocking_connection: Created channel=1
+2026-11-22 16:05:31 INFO lab_messaging.amqp.client: AMQP exchange declared name=lab.events type=direct
+2026-11-22 16:05:31 INFO lab_messaging.amqp.client: AMQP queues declared: lab.heartbeat, lab.commands, lab.test
+2026-11-22 16:05:31 INFO lab_messaging.amqp.client: AMQP queues bound to exchange
+2026-11-22 16:05:31 INFO __main__: Bound temp queue=lab.command.sender.test.760b5632 for routing_key=test
+
+===================================
+LAB AMQP MESSAGE SENDER
+===================================
+  1. Send heartbeat
+  2. Send sample JSON
+  3. Send custom text
+  4. Command aliases
+  5. Exit
+
+Select (1-5): 1
+2026-11-22 16:05:36 INFO lab_messaging.amqp.client: AMQP publish exchange=lab.events routing_key=heartbeat message_id=50c5338a-9cc8-41f0-a21f-e015b13f65c6 delivery_mode=2
+  [OK] Heartbeat sent (message_id=50c5338a-9cc8-41f0-a21f-e015b13f65c6)
+2026-11-22 16:05:36 INFO __main__: Sent heartbeat message_id=50c5338a-9cc8-41f0-a21f-e015b13f65c6
+
+===================================
+LAB AMQP MESSAGE SENDER
+===================================
+  1. Send heartbeat
+  2. Send sample JSON
+  3. Send custom text
+  4. Command aliases
+  5. Exit
+
+Select (1-5): 2
+  JSON: {"type": "heartbeat", "version": 1, "message_id": "3b21fadd-1df8-4909-97cf-4c094f75c00d", "timestamp": "2026-11-22T16:05:39Z", "payload": {"hostname": "lab-dockers", "cpu_load": 0.42, "memory_used_percent": 65.2, "uptime_seconds": 12000}}
+2026-11-22 16:05:39 INFO lab_messaging.amqp.client: AMQP publish exchange=lab.events routing_key=heartbeat message_id=98912a3c-cf11-4558-8746-43fb89015c11 delivery_mode=2
+  [OK] Sample JSON sent
+
+===================================
+LAB AMQP MESSAGE SENDER
+===================================
+  1. Send heartbeat
+  2. Send sample JSON
+  3. Send custom text
+  4. Command aliases
+  5. Exit
+
+Select (1-5): 3
+  Enter message: test text
+2026-11-22 16:06:06 INFO lab_messaging.amqp.client: AMQP publish exchange=lab.events routing_key=test message_id=2ab212ad-907d-4c1c-9034-7c1b0d5916bf delivery_mode=2
+  [OK] Text sent: test text
+2026-11-22 16:06:06 INFO __main__: Sent text message
+
+===================================
+LAB AMQP MESSAGE SENDER
+===================================
+  1. Send heartbeat
+  2. Send sample JSON
+  3. Send custom text
+  4. Command aliases
+  5. Exit
+
+Select (1-5): 4
+
+===================================
+COMMAND ALIASES
+===================================
+  1. status
+  2. restart_service
+  3. reload_config
+  4. get_metrics
+  5. ping
+  0. Back
+
+Select command (1-5, 0=back): 1
+2026-11-22 16:06:17 INFO lab_messaging.amqp.client: AMQP publish exchange=lab.events routing_key=command message_id=3b56c5c1-b2ea-48f7-b72f-bd4110437aa6 delivery_mode=2
+  [OK] Command 'status' sent (message_id=3b56c5c1-b2ea-48f7-b72f-bd4110437aa6)
+2026-11-22 16:06:17 INFO __main__: Sent command alias=status message_id=3b56c5c1-b2ea-48f7-b72f-bd4110437aa6
+
+===================================
+COMMAND ALIASES
+===================================
+  1. status
+  2. restart_service
+  3. reload_config
+  4. get_metrics
+  5. ping
+  0. Back
+
+Select command (1-5, 0=back): 2
+2026-11-22 16:06:23 INFO lab_messaging.amqp.client: AMQP publish exchange=lab.events routing_key=command message_id=cf96e10f-fad4-4d64-b9c8-fcd83bb197a5 delivery_mode=2
+  [OK] Command 'restart_service' sent (message_id=cf96e10f-fad4-4d64-b9c8-fcd83bb197a5)
+2026-11-22 16:06:23 INFO __main__: Sent command alias=restart_service message_id=cf96e10f-fad4-4d64-b9c8-fcd83bb197a5
+
+===================================
+COMMAND ALIASES
+===================================
+  1. status
+  2. restart_service
+  3. reload_config
+  4. get_metrics
+  5. ping
+  0. Back
+
+Select command (1-5, 0=back): 3
+2026-11-22 16:06:29 INFO lab_messaging.amqp.client: AMQP publish exchange=lab.events routing_key=command message_id=8baa9973-27e8-4e75-8323-5a20fa40e74f delivery_mode=2
+  [OK] Command 'reload_config' sent (message_id=8baa9973-27e8-4e75-8323-5a20fa40e74f)
+2026-11-22 16:06:29 INFO __main__: Sent command alias=reload_config message_id=8baa9973-27e8-4e75-8323-5a20fa40e74f
+
+===================================
+COMMAND ALIASES
+===================================
+  1. status
+  2. restart_service
+  3. reload_config
+  4. get_metrics
+  5. ping
+  0. Back
+
+Select command (1-5, 0=back): 4
+2026-11-22 16:06:37 INFO lab_messaging.amqp.client: AMQP publish exchange=lab.events routing_key=command message_id=51042a7f-2d44-4da3-a745-2c3d368b30b0 delivery_mode=2
+  [OK] Command 'get_metrics' sent (message_id=51042a7f-2d44-4da3-a745-2c3d368b30b0)
+2026-11-22 16:06:37 INFO __main__: Sent command alias=get_metrics message_id=51042a7f-2d44-4da3-a745-2c3d368b30b0
+
+===================================
+COMMAND ALIASES
+===================================
+  1. status
+  2. restart_service
+  3. reload_config
+  4. get_metrics
+  5. ping
+  0. Back
+
+Select command (1-5, 0=back): 5
+2026-11-22 16:06:44 INFO lab_messaging.amqp.client: AMQP publish exchange=lab.events routing_key=command message_id=962b7dba-6a4a-4068-be85-3c890fe3a40e delivery_mode=2
+  [OK] Command 'ping' sent (message_id=962b7dba-6a4a-4068-be85-3c890fe3a40e)
+2026-11-22 16:06:44 INFO __main__: Sent command alias=ping message_id=962b7dba-6a4a-4068-be85-3c890fe3a40e
+
+
+---
+
+/home/user/lab-amqp/python-lab/scripts/run-amqp-consumer.sh
+2026-11-22 16:04:57 INFO lab_messaging.amqp.client: AMQP connecting host=127.0.0.1 port=5672 user=lab_user vhost=/lab
+2026-11-22 16:04:57 INFO pika.adapters.utils.connection_workflow: Pika version 1.5.0 connecting to ('127.0.0.1', 5672)
+2026-11-22 16:04:57 INFO pika.adapters.utils.io_services_utils: Socket connected: <socket.socket fd=6, family=2, type=1, proto=6, laddr=('127.0.0.1', 34154), raddr=('127.0.0.1', 5672)>
+2026-11-22 16:04:57 INFO pika.adapters.utils.connection_workflow: Streaming transport linked up: (<pika.adapters.utils.io_services_utils._AsyncPlaintextTransport object at 0x71abe5b19790>, _StreamingProtocolShim: <SelectConnection PROTOCOL transport=<pika.adapters.utils.io_services_utils._AsyncPlaintextTransport object at 0x71abe5b19790> params=<URLParameters host=127.0.0.1 port=5672 virtual_host=/lab ssl=False>>).
+2026-11-22 16:04:57 INFO pika.adapters.utils.connection_workflow: AMQPConnector - reporting success: <SelectConnection OPEN transport=<pika.adapters.utils.io_services_utils._AsyncPlaintextTransport object at 0x71abe5b19790> params=<URLParameters host=127.0.0.1 port=5672 virtual_host=/lab ssl=False>>
+2026-11-22 16:04:57 INFO pika.adapters.utils.connection_workflow: AMQPConnectionWorkflow - reporting success: <SelectConnection OPEN transport=<pika.adapters.utils.io_services_utils._AsyncPlaintextTransport object at 0x71abe5b19790> params=<URLParameters host=127.0.0.1 port=5672 virtual_host=/lab ssl=False>>
+2026-11-22 16:04:57 INFO pika.adapters.blocking_connection: Connection workflow succeeded: <SelectConnection OPEN transport=<pika.adapters.utils.io_services_utils._AsyncPlaintextTransport object at 0x71abe5b19790> params=<URLParameters host=127.0.0.1 port=5672 virtual_host=/lab ssl=False>>
+2026-11-22 16:04:57 INFO pika.adapters.blocking_connection: Created channel=1
+2026-11-22 16:04:57 INFO lab_messaging.amqp.client: AMQP exchange declared name=lab.events type=direct
+2026-11-22 16:04:57 INFO lab_messaging.amqp.client: AMQP queues declared: lab.heartbeat, lab.commands, lab.test
+2026-11-22 16:04:57 INFO lab_messaging.amqp.client: AMQP queues bound to exchange
+2026-11-22 16:04:57 INFO lab_messaging.commands.dispatcher: Dispatcher registered alias=status handler=handle_status
+2026-11-22 16:04:57 INFO lab_messaging.commands.dispatcher: Dispatcher registered alias=restart_service handler=handle_restart_service
+2026-11-22 16:04:57 INFO lab_messaging.commands.dispatcher: Dispatcher registered alias=reload_config handler=handle_reload_config
+2026-11-22 16:04:57 INFO lab_messaging.commands.dispatcher: Dispatcher registered alias=get_metrics handler=handle_get_metrics
+2026-11-22 16:04:57 INFO lab_messaging.commands.dispatcher: Dispatcher registered alias=ping handler=handle_ping
+2026-11-22 16:04:57 INFO __main__: Registered 5 command handlers
+2026-11-22 16:04:57 INFO __main__: Consumer subscribed queue=lab.heartbeat
+2026-11-22 16:04:57 INFO __main__: Consumer subscribed queue=lab.commands
+2026-11-22 16:04:57 INFO __main__: Consumer subscribed queue=lab.test
+2026-11-22 16:04:57 INFO __main__: Consumer running on queues=lab.heartbeat, lab.commands, lab.test. Press Ctrl+C to stop.
+
+2026-11-22 16:05:06 INFO __main__: AMQP message received queue=lab.test routing_key=test delivery_tag=1 message_id=4f1ecf19-d035-44c5-a965-789b036d5d87
+2026-11-22 16:05:06 INFO __main__:   latency_ms=700.58
+2026-11-22 16:05:06 INFO __main__:   body=привет
+2026-11-22 16:05:17 INFO __main__: AMQP message received queue=lab.heartbeat routing_key=heartbeat delivery_tag=2 message_id=cb5b08a1-c735-4a75-b20b-70e47f87835a
+2026-11-22 16:05:17 INFO __main__:   latency_ms=412.79
+2026-11-22 16:05:17 INFO __main__:   body={"type": "heartbeat", "version": 1, "message_id": "cb5b08a1-c735-4a75-b20b-70e47f87835a", "timestamp": "2026-11-22T16:05:17Z", "payload": {"hostname": "lab-dockers", "cpu_load": 0.42, "memory_used_percent": 65.2, "uptime_seconds": 12000}}
+2026-11-22 16:05:17 INFO __main__:   type=heartbeat version=1
+
+2026-11-22 16:05:36 INFO __main__: AMQP message received queue=lab.heartbeat routing_key=heartbeat delivery_tag=3 message_id=50c5338a-9cc8-41f0-a21f-e015b13f65c6
+2026-11-22 16:05:36 INFO __main__:   latency_ms=222.50
+2026-11-22 16:05:36 INFO __main__:   body={"type": "heartbeat", "version": 1, "message_id": "50c5338a-9cc8-41f0-a21f-e015b13f65c6", "timestamp": "2026-11-22T16:05:36Z", "payload": {"hostname": "lab-dockers", "cpu_load": 0.42, "memory_used_percent": 65.2, "uptime_seconds": 12000}}
+2026-11-22 16:05:36 INFO __main__:   type=heartbeat version=1
+
+
+
+2026-11-22 16:05:39 INFO __main__: AMQP message received queue=lab.heartbeat routing_key=heartbeat delivery_tag=4 message_id=98912a3c-cf11-4558-8746-43fb89015c11
+2026-11-22 16:05:39 INFO __main__:   latency_ms=948.67
+2026-11-22 16:05:39 INFO __main__:   body={"type": "heartbeat", "version": 1, "message_id": "3b21fadd-1df8-4909-97cf-4c094f75c00d", "timestamp": "2026-11-22T16:05:39Z", "payload": {"hostname": "lab-dockers", "cpu_load": 0.42, "memory_used_percent": 65.2, "uptime_seconds": 12000}}
+2026-11-22 16:05:39 INFO __main__:   type=heartbeat version=1
+
+
+2026-11-22 16:06:06 INFO __main__: AMQP message received queue=lab.test routing_key=test delivery_tag=5 message_id=2ab212ad-907d-4c1c-9034-7c1b0d5916bf
+2026-11-22 16:06:06 INFO __main__:   latency_ms=712.01
+2026-11-22 16:06:06 INFO __main__:   body=test text
+
+
+2026-11-22 16:06:17 INFO __main__: AMQP message received queue=lab.commands routing_key=command delivery_tag=6 message_id=3b56c5c1-b2ea-48f7-b72f-bd4110437aa6
+2026-11-22 16:06:17 INFO __main__:   latency_ms=736.03
+2026-11-22 16:06:17 INFO __main__:   body={"type": "command", "version": 1, "message_id": "3b56c5c1-b2ea-48f7-b72f-bd4110437aa6", "timestamp": "2026-11-22T16:06:17Z", "payload": {"alias": "status", "arguments": {}}}
+2026-11-22 16:06:17 INFO __main__:   type=command version=1
+2026-11-22 16:06:17 INFO lab_messaging.commands.dispatcher: Command received alias=status
+2026-11-22 16:06:17 INFO lab_messaging.commands.dispatcher: Alias=status handler=handle_status
+2026-11-22 16:06:17 INFO lab_messaging.commands.handlers.status: Handler: handle_status arguments={}
+2026-11-22 16:06:17 INFO lab_messaging.commands.dispatcher: Alias=status handler=handle_status result=success
+2026-11-22 16:06:17 INFO __main__:   dispatch result=ok
+
+
+2026-11-22 16:06:23 INFO __main__: AMQP message received queue=lab.commands routing_key=command delivery_tag=7 message_id=cf96e10f-fad4-4d64-b9c8-fcd83bb197a5
+2026-11-22 16:06:23 INFO __main__:   latency_ms=337.34
+2026-11-22 16:06:23 INFO __main__:   body={"type": "command", "version": 1, "message_id": "cf96e10f-fad4-4d64-b9c8-fcd83bb197a5", "timestamp": "2026-11-22T16:06:23Z", "payload": {"alias": "restart_service", "arguments": {}}}
+2026-11-22 16:06:23 INFO __main__:   type=command version=1
+2026-11-22 16:06:23 INFO lab_messaging.commands.dispatcher: Command received alias=restart_service
+2026-11-22 16:06:23 INFO lab_messaging.commands.dispatcher: Alias=restart_service handler=handle_restart_service
+2026-11-22 16:06:23 INFO lab_messaging.commands.handlers.restart_service: Handler: handle_restart_service arguments={}
+2026-11-22 16:06:23 INFO lab_messaging.commands.dispatcher: Alias=restart_service handler=handle_restart_service result=success
+2026-11-22 16:06:23 INFO __main__:   dispatch result=ok
+
+2026-11-22 16:06:29 INFO __main__: AMQP message received queue=lab.commands routing_key=command delivery_tag=8 message_id=8baa9973-27e8-4e75-8323-5a20fa40e74f
+2026-11-22 16:06:29 INFO __main__:   latency_ms=919.58
+2026-11-22 16:06:29 INFO __main__:   body={"type": "command", "version": 1, "message_id": "8baa9973-27e8-4e75-8323-5a20fa40e74f", "timestamp": "2026-11-22T16:06:29Z", "payload": {"alias": "reload_config", "arguments": {}}}
+2026-11-22 16:06:29 INFO __main__:   type=command version=1
+2026-11-22 16:06:29 INFO lab_messaging.commands.dispatcher: Command received alias=reload_config
+2026-11-22 16:06:29 INFO lab_messaging.commands.dispatcher: Alias=reload_config handler=handle_reload_config
+2026-11-22 16:06:29 INFO lab_messaging.commands.handlers.reload_config: Handler: handle_reload_config arguments={}
+2026-11-22 16:06:29 INFO lab_messaging.commands.dispatcher: Alias=reload_config handler=handle_reload_config result=success
+2026-11-22 16:06:29 INFO __main__:   dispatch result=ok
+
+2026-11-22 16:06:37 INFO __main__: AMQP message received queue=lab.commands routing_key=command delivery_tag=9 message_id=51042a7f-2d44-4da3-a745-2c3d368b30b0
+2026-11-22 16:06:37 INFO __main__:   latency_ms=180.27
+2026-11-22 16:06:37 INFO __main__:   body={"type": "command", "version": 1, "message_id": "51042a7f-2d44-4da3-a745-2c3d368b30b0", "timestamp": "2026-11-22T16:06:37Z", "payload": {"alias": "get_metrics", "arguments": {}}}
+2026-11-22 16:06:37 INFO __main__:   type=command version=1
+2026-11-22 16:06:37 INFO lab_messaging.commands.dispatcher: Command received alias=get_metrics
+2026-11-22 16:06:37 INFO lab_messaging.commands.dispatcher: Alias=get_metrics handler=handle_get_metrics
+2026-11-22 16:06:37 INFO lab_messaging.commands.handlers.get_metrics: Handler: handle_get_metrics arguments={}
+2026-11-22 16:06:37 INFO lab_messaging.commands.dispatcher: Alias=get_metrics handler=handle_get_metrics result=success
+2026-11-22 16:06:37 INFO __main__:   dispatch result=ok
+
+2026-11-22 16:06:44 INFO __main__: AMQP message received queue=lab.commands routing_key=command delivery_tag=10 message_id=962b7dba-6a4a-4068-be85-3c890fe3a40e
+2026-11-22 16:06:44 INFO __main__:   latency_ms=255.79
+2026-11-22 16:06:44 INFO __main__:   body={"type": "command", "version": 1, "message_id": "962b7dba-6a4a-4068-be85-3c890fe3a40e", "timestamp": "2026-11-22T16:06:44Z", "payload": {"alias": "ping", "arguments": {}}}
+2026-11-22 16:06:44 INFO __main__:   type=command version=1
+2026-11-22 16:06:44 INFO lab_messaging.commands.dispatcher: Command received alias=ping
+2026-11-22 16:06:44 INFO lab_messaging.commands.dispatcher: Alias=ping handler=handle_ping
+2026-11-22 16:06:44 INFO lab_messaging.commands.handlers.ping: Handler: handle_ping arguments={}
+2026-11-22 16:06:44 INFO lab_messaging.commands.dispatcher: Alias=ping handler=handle_ping result=success
+2026-11-22 16:06:44 INFO __main__:   dispatch result=ok
+

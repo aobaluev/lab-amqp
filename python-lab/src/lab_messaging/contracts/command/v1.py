@@ -20,7 +20,8 @@ COMMAND_V1_ALIASES = ("status", "restart_service", "reload_config", "get_metrics
 
 def create_message(
     message_id: str,
-    timestamp: str,
+    timestamp: float,
+    datetime: str,
     alias: str,
     arguments: dict | None = None,
     **extra: Any,
@@ -39,6 +40,7 @@ def create_message(
         version=CONTRACT_VERSION_1,
         message_id=message_id,
         timestamp=timestamp,
+        datetime=datetime,
         payload=payload,
     )
 
@@ -75,8 +77,11 @@ def validate(data: dict) -> dict:
     if not isinstance(data["message_id"], str) or not data["message_id"]:
         raise ValueError("message_id must be a non-empty string")
 
-    if not isinstance(data["timestamp"], str) or not data["timestamp"]:
-        raise ValueError("timestamp must be a non-empty string")
+    if not isinstance(data["timestamp"], (int, float)):
+        raise ValueError("timestamp must be a number (epoch seconds)")
+
+    if not isinstance(data["datetime"], str) or not data["datetime"]:
+        raise ValueError("datetime must be a non-empty string")
 
     payload = data.get("payload")
     if not isinstance(payload, dict):

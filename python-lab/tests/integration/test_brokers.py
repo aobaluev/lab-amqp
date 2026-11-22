@@ -27,7 +27,7 @@ from lab_messaging.contracts import (
     get_command_module,
     get_heartbeat_module,
 )
-from lab_messaging.mqtt.client import MQTTClient, current_timestamp, generate_message_id
+from lab_messaging.mqtt.client import MQTTClient, current_timestamp, current_datetime, generate_message_id
 
 MQTT_HOST = "127.0.0.1"
 MQTT_PORT = 1883
@@ -215,6 +215,7 @@ class TestFullChain:
             msg = mod.make_heartbeat(
                 message_id=str(uuid.uuid4()),
                 timestamp=current_timestamp(),
+                datetime=current_datetime(),
                 hostname="test-host",
                 cpu_load=0.42,
                 memory_used_percent=65.0,
@@ -299,6 +300,7 @@ class TestFullChain:
             msg = mod.make_command(
                 message_id=str(uuid.uuid4()),
                 timestamp=current_timestamp(),
+                datetime=current_datetime(),
                 alias="status",
                 arguments={},
             )

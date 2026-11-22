@@ -24,7 +24,11 @@ from lab_messaging.contracts import (
     get_heartbeat_module,
 )
 from lab_messaging.contracts.command import COMMAND_V1_ALIASES  # type: ignore
-from lab_messaging.mqtt.client import current_timestamp, generate_message_id
+from lab_messaging.mqtt.client import (
+    current_timestamp,
+    current_datetime,
+    generate_message_id,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +43,12 @@ def setup_logging(level: str = "INFO") -> None:
 
 def publish_heartbeat(client: AMQPClient, validation_mode: str) -> None:
     mod = get_heartbeat_module(validation_mode)
+    ts = current_timestamp()
+    dt = current_datetime()
     msg = mod.make_heartbeat(
         message_id=generate_message_id(),
-        timestamp=current_timestamp(),
+        timestamp=ts,
+        datetime=dt,
         hostname="lab-dockers",
         cpu_load=0.42,
         memory_used_percent=65.2,
@@ -59,9 +66,12 @@ def publish_heartbeat(client: AMQPClient, validation_mode: str) -> None:
 
 def publish_command(client: AMQPClient, alias: str, validation_mode: str) -> None:
     mod = get_command_module(validation_mode)
+    ts = current_timestamp()
+    dt = current_datetime()
     msg = mod.make_command(
         message_id=generate_message_id(),
-        timestamp=current_timestamp(),
+        timestamp=ts,
+        datetime=dt,
         alias=alias,
         arguments={},
     )

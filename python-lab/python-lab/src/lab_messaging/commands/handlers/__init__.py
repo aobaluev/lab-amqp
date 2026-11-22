@@ -1,1 +1,0 @@
-"""lab_messaging.commands.handlers package."""
