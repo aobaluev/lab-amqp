@@ -6,10 +6,14 @@ Provides a text-menu UI for sending:
 - Arbitrary plain text
 
 Sends via RabbitMQ AMQP exchange.
+
+Can be used interactively (no arguments) or as a console utility
+with CLI arguments for non-interactive sending.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import signal
@@ -29,6 +33,7 @@ from lab_messaging.contracts import (
     get_command_module,
     get_heartbeat_module,
 )
+from lab_messaging.contracts.command import COMMAND_V1_ALIASES
 from lab_messaging.mqtt.client import current_timestamp, generate_message_id
 
 logger = logging.getLogger(__name__)
@@ -157,7 +162,7 @@ def main_menu(client: AMQPClient, validation_mode: str) -> None:
             )
             print(f"  JSON: {sample}")
             client.publish(
-                routing_key=ROUTING_KEY_TEST,
+                routing_key=ROUTING_KEY_HEARTBEAT,
                 body=sample,
                 content_type="application/json",
             )
@@ -176,9 +181,53 @@ def main_menu(client: AMQPClient, validation_mode: str) -> None:
 
 
 def main() -> None:
-    parser = __import__("argparse").ArgumentParser(description="Interactive message sender")
-    parser.add_argument("--validation-mode", choices=VALIDATION_MODES, default="permissive", help="Validation mode")
-    parser.add_argument("--log-level", default="INFO", help="Log level")
+    parser = argparse.ArgumentParser(description="Lab AMQP message sender")
+    parser.add_argument(
+        "--heartbeat",
+        action="store_true",
+        help="Send heartbeat v1 message",
+    )
+    parser.add_argument(
+        "--command",
+        choices=COMMAND_V1_ALIASES,
+        help="Send command alias message",
+    )
+    parser.add_argument(
+        "--text",
+        help="Send arbitrary plain text",
+    )
+    parser.add_argument(
+        "--json",
+        help="Send raw JSON string",
+    )
+    parser.add_argument(
+        "--routing-key",
+        default="test",
+        help="AMQP routing key (default: test)",
+    )
+    parser.add_argument(
+        "--count",
+        type=int,
+        default=1,
+        help="Number of messages to send (default: 1)",
+    )
+    parser.add_argument(
+        "--interval",
+        type=float,
+        default=1.0,
+        help="Interval between messages in seconds (default: 1.0)",
+    )
+    parser.add_argument(
+        "--validation-mode",
+        choices=VALIDATION_MODES,
+        default="permissive",
+        help="Validation mode (default: permissive)",
+    )
+    parser.add_argument(
+        "--log-level",
+        default="INFO",
+        help="Log level (default: INFO)",
+    )
     args = parser.parse_args()
 
     setup_logging(args.log_level)
@@ -201,7 +250,36 @@ def main() -> None:
         )
         logger.info("Bound temp queue=%s for routing_key=test", test_queue)
 
-        main_menu(client, args.validation_mode)
+        # Non-interactive mode: CLI arguments provided
+        if args.heartbeat:
+            for i in range(args.count):
+                send_heartbeat(client, args.validation_mode)
+                if i < args.count - 1:
+                    time.sleep(args.interval)
+        elif args.command:
+            for i in range(args.count):
+                send_command(client, args.command, args.validation_mode)
+                if i < args.count - 1:
+                    time.sleep(args.interval)
+        elif args.text:
+            for i in range(args.count):
+                send_text(client, args.text)
+                if i < args.count - 1:
+                    time.sleep(args.interval)
+        elif args.json:
+            # Validate JSON
+            json.loads(args.json)
+            for i in range(args.count):
+                client.publish(
+                    routing_key=args.routing_key,
+                    body=args.json,
+                    content_type="application/json",
+                )
+                if i < args.count - 1:
+                    time.sleep(args.interval)
+        else:
+            # Interactive mode: no CLI arguments
+            main_menu(client, args.validation_mode)
     finally:
         client.stop()
 

@@ -104,7 +104,7 @@ class Bridge:
         logger.info("Bridge connected to both brokers")
 
     def _on_mqtt_connect(self, client, userdata, flags, rc, properties=None) -> None:
-        if rc == 0:
+        if rc == mqtt.MQTT_ERR_SUCCESS:
             self._running = True
             logger.info("Bridge MQTT connected rc=%s", rc)
             # Subscribe to all mapped topics
@@ -116,7 +116,7 @@ class Bridge:
 
     def _on_mqtt_disconnect(self, client, userdata, flags, rc, properties=None) -> None:
         self._running = False
-        if rc != 0:
+        if rc != mqtt.MQTT_ERR_SUCCESS:
             logger.warning("Bridge MQTT unexpected disconnect rc=%s", rc)
         else:
             logger.info("Bridge MQTT disconnected")

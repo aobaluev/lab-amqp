@@ -1,0 +1,61 @@
+/home/user/lab-amqp/python-lab/scripts/run-amqp-consumer.sh
+2026-11-22 15:25:58 INFO lab_messaging.amqp.client: AMQP connecting host=127.0.0.1 port=5672 user=lab_user vhost=/lab
+2026-11-22 15:25:58 INFO pika.adapters.utils.connection_workflow: Pika version 1.5.0 connecting to ('127.0.0.1', 5672)
+2026-11-22 15:25:58 INFO pika.adapters.utils.io_services_utils: Socket connected: <socket.socket fd=6, family=2, type=1, proto=6, laddr=('127.0.0.1', 37542), raddr=('127.0.0.1', 5672)>
+2026-11-22 15:25:58 INFO pika.adapters.utils.connection_workflow: Streaming transport linked up: (<pika.adapters.utils.io_services_utils._AsyncPlaintextTransport object at 0x7b9bfb615490>, _StreamingProtocolShim: <SelectConnection PROTOCOL transport=<pika.adapters.utils.io_services_utils._AsyncPlaintextTransport object at 0x7b9bfb615490> params=<URLParameters host=127.0.0.1 port=5672 virtual_host=/lab ssl=False>>).
+2026-11-22 15:25:58 INFO pika.adapters.utils.connection_workflow: AMQPConnector - reporting success: <SelectConnection OPEN transport=<pika.adapters.utils.io_services_utils._AsyncPlaintextTransport object at 0x7b9bfb615490> params=<URLParameters host=127.0.0.1 port=5672 virtual_host=/lab ssl=False>>
+2026-11-22 15:25:58 INFO pika.adapters.utils.connection_workflow: AMQPConnectionWorkflow - reporting success: <SelectConnection OPEN transport=<pika.adapters.utils.io_services_utils._AsyncPlaintextTransport object at 0x7b9bfb615490> params=<URLParameters host=127.0.0.1 port=5672 virtual_host=/lab ssl=False>>
+2026-11-22 15:25:58 INFO pika.adapters.blocking_connection: Connection workflow succeeded: <SelectConnection OPEN transport=<pika.adapters.utils.io_services_utils._AsyncPlaintextTransport object at 0x7b9bfb615490> params=<URLParameters host=127.0.0.1 port=5672 virtual_host=/lab ssl=False>>
+2026-11-22 15:25:58 INFO pika.adapters.blocking_connection: Created channel=1
+2026-11-22 15:25:58 INFO lab_messaging.amqp.client: AMQP exchange declared name=lab.events type=direct
+2026-11-22 15:25:58 INFO lab_messaging.amqp.client: AMQP queues declared: lab.heartbeat, lab.commands
+2026-11-22 15:25:58 INFO lab_messaging.amqp.client: AMQP queues bound to exchange
+2026-11-22 15:25:58 INFO lab_messaging.commands.dispatcher: Dispatcher registered alias=status handler=handle_status
+2026-11-22 15:25:58 INFO lab_messaging.commands.dispatcher: Dispatcher registered alias=restart_service handler=handle_restart_service
+2026-11-22 15:25:58 INFO lab_messaging.commands.dispatcher: Dispatcher registered alias=reload_config handler=handle_reload_config
+2026-11-22 15:25:58 INFO lab_messaging.commands.dispatcher: Dispatcher registered alias=get_metrics handler=handle_get_metrics
+2026-11-22 15:25:58 INFO lab_messaging.commands.dispatcher: Dispatcher registered alias=ping handler=handle_ping
+2026-11-22 15:25:58 INFO __main__: Registered 5 command handlers
+2026-11-22 15:25:58 INFO __main__: Consumer subscribed queue=lab.heartbeat
+2026-11-22 15:25:58 INFO __main__: Consumer subscribed queue=lab.commands
+2026-11-22 15:25:58 INFO __main__: Consumer running on queues=lab.heartbeat, lab.commands. Press Ctrl+C to stop.
+
+2026-11-22 15:26:30 INFO __main__: AMQP message received queue=lab.commands routing_key=command delivery_tag=1 message_id=7cd7cad5-78f0-42cc-9e72-ad666d14c741
+2026-11-22 15:26:30 INFO __main__:   latency_ms=503.62
+2026-11-22 15:26:30 INFO __main__:   type=command version=1
+2026-11-22 15:26:30 INFO lab_messaging.commands.dispatcher: Command received alias=restart_service
+2026-11-22 15:26:30 INFO lab_messaging.commands.dispatcher: Alias=restart_service handler=handle_restart_service
+2026-11-22 15:26:30 INFO lab_messaging.commands.handlers.restart_service: Handler: handle_restart_service arguments={}
+2026-11-22 15:26:30 INFO lab_messaging.commands.dispatcher: Alias=restart_service handler=handle_restart_service result=success
+2026-11-22 15:26:30 INFO __main__:   dispatch result=ok
+
+2026-11-22 15:26:38 INFO __main__: AMQP message received queue=lab.commands routing_key=command delivery_tag=2 message_id=c2706435-8b51-4e25-a9e9-089f8ebc9178
+2026-11-22 15:26:38 INFO __main__:   latency_ms=693.91
+2026-11-22 15:26:38 INFO __main__:   type=command version=1
+2026-11-22 15:26:38 INFO lab_messaging.commands.dispatcher: Command received alias=get_metrics
+2026-11-22 15:26:38 INFO lab_messaging.commands.dispatcher: Alias=get_metrics handler=handle_get_metrics
+2026-11-22 15:26:38 INFO lab_messaging.commands.handlers.get_metrics: Handler: handle_get_metrics arguments={}
+2026-11-22 15:26:38 INFO lab_messaging.commands.dispatcher: Alias=get_metrics handler=handle_get_metrics result=success
+2026-11-22 15:26:38 INFO __main__:   dispatch result=ok
+
+^C2026-11-22 15:27:29 INFO lab_messaging.amqp.client: Received signal 2, shutting down...
+2026-11-22 15:27:29 INFO pika.channel: Closing channel (0): 'Normal shutdown' on <Channel number=1 OPEN conn=<SelectConnection OPEN transport=<pika.adapters.utils.io_services_utils._AsyncPlaintextTransport object at 0x7b9bfb615490> params=<URLParameters host=127.0.0.1 port=5672 virtual_host=/lab ssl=False>>>
+2026-11-22 15:27:29 INFO pika.channel: Received <Channel.CloseOk> on <Channel number=1 CLOSING conn=<SelectConnection OPEN transport=<pika.adapters.utils.io_services_utils._AsyncPlaintextTransport object at 0x7b9bfb615490> params=<URLParameters host=127.0.0.1 port=5672 virtual_host=/lab ssl=False>>>
+2026-11-22 15:27:29 INFO pika.adapters.blocking_connection: Closing connection (200): Normal shutdown
+2026-11-22 15:27:29 INFO pika.connection: Closing connection (200): 'Normal shutdown'
+2026-11-22 15:27:29 INFO pika.adapters.utils.io_services_utils: Aborting transport connection: state=1; <socket.socket fd=6, family=2, type=1, proto=6, laddr=('127.0.0.1', 37542), raddr=('127.0.0.1', 5672)>
+2026-11-22 15:27:29 INFO pika.adapters.utils.io_services_utils: _AsyncTransportBase._initate_abort(): Initiating abrupt asynchronous transport shutdown: state=1; error=None; <socket.socket fd=6, family=2, type=1, proto=6, laddr=('127.0.0.1', 37542), raddr=('127.0.0.1', 5672)>
+2026-11-22 15:27:29 INFO pika.adapters.utils.io_services_utils: Deactivating transport: state=1; <socket.socket fd=6, family=2, type=1, proto=6, laddr=('127.0.0.1', 37542), raddr=('127.0.0.1', 5672)>
+2026-11-22 15:27:29 INFO pika.connection: AMQP stack terminated, failed to connect, or aborted: opened=True, error-arg=None; pending-error=ConnectionClosedByClient: (200) 'Normal shutdown' (host='127.0.0.1', port=5672)
+2026-11-22 15:27:29 INFO pika.connection: Stack terminated due to ConnectionClosedByClient: (200) 'Normal shutdown' (host='127.0.0.1', port=5672)
+2026-11-22 15:27:29 INFO pika.adapters.utils.io_services_utils: Closing transport socket and unlinking: state=3; <socket.socket fd=6, family=2, type=1, proto=6, laddr=('127.0.0.1', 37542), raddr=('127.0.0.1', 5672)>
+2026-11-22 15:27:29 INFO pika.adapters.blocking_connection: User-initiated close: result=_OnClosedArgs(connection=<SelectConnection CLOSED transport=None params=<URLParameters host=127.0.0.1 port=5672 virtual_host=/lab ssl=False>>, error=ConnectionClosedByClient: (200) 'Normal shutdown' (host='127.0.0.1', port=5672))
+2026-11-22 15:27:29 INFO lab_messaging.amqp.client: AMQP client stopped
+
+=== Statistics ===
+Received: 2
+Acked: 2
+Min latency: 503.62 ms
+Max latency: 693.91 ms
+Avg latency: 598.77 ms
+2026-11-22 15:27:29 INFO lab_messaging.amqp.client: AMQP client stopped

@@ -25,6 +25,7 @@ EXCHANGE_TYPE = "direct"
 
 QUEUE_HEARTBEAT = "lab.heartbeat"
 QUEUE_COMMANDS = "lab.commands"
+QUEUE_TEST = "lab.test"
 
 ROUTING_KEY_HEARTBEAT = "heartbeat"
 ROUTING_KEY_COMMAND = "command"
@@ -96,7 +97,13 @@ class AMQPClient:
         # Declare durable queues
         self._channel.queue_declare(queue=QUEUE_HEARTBEAT, durable=True)
         self._channel.queue_declare(queue=QUEUE_COMMANDS, durable=True)
-        logger.info("AMQP queues declared: %s, %s", QUEUE_HEARTBEAT, QUEUE_COMMANDS)
+        self._channel.queue_declare(queue=QUEUE_TEST, durable=True)
+        logger.info(
+            "AMQP queues declared: %s, %s, %s",
+            QUEUE_HEARTBEAT,
+            QUEUE_COMMANDS,
+            QUEUE_TEST,
+        )
 
         # Bind queues to exchange with routing keys
         self._channel.queue_bind(
@@ -108,6 +115,11 @@ class AMQPClient:
             exchange=EXCHANGE_NAME,
             queue=QUEUE_COMMANDS,
             routing_key=ROUTING_KEY_COMMAND,
+        )
+        self._channel.queue_bind(
+            exchange=EXCHANGE_NAME,
+            queue=QUEUE_TEST,
+            routing_key=ROUTING_KEY_TEST,
         )
         logger.info("AMQP queues bound to exchange")
 

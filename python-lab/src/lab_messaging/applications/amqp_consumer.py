@@ -18,6 +18,7 @@ from lab_messaging.amqp.client import (
     AMQPClient,
     QUEUE_COMMANDS,
     QUEUE_HEARTBEAT,
+    QUEUE_TEST,
 )
 from lab_messaging.config.settings import Settings
 from lab_messaging.commands.dispatcher import dispatcher
@@ -127,11 +128,10 @@ def print_stats() -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="AMQP Consumer")
-    parser.add_argument("--queue", default="lab.heartbeat", help="Queue to consume")
+    parser.add_argument("--queue", default="lab.heartbeat,lab.commands,lab.test", help="Queue(s) to consume (comma-separated)")
     parser.add_argument("--auto-ack", action="store_true", help="Use automatic ACK")
     parser.add_argument("--log-level", default="INFO", help="Log level")
     args = parser.parse_args()
-    print(args)
 
     setup_logging(args.log_level)
 
@@ -144,14 +144,36 @@ def main() -> None:
 
         auto_ack = args.auto_ack
 
-        def callback(ch, method, props, body):
-            on_amqp_message(args.queue, ch, method, props, body)
-            if not auto_ack:
-                ch.basic_ack(delivery_tag=method.delivery_tag)
-                stats["acked"] += 1
+        queues = [q.strip() for q in args.queue.split(",")]
 
-        logger.info("Consumer running on queue=%s. Press Ctrl+C to stop.", args.queue)
-        client.consume(args.queue, callback, auto_ack=auto_ack)
+        def make_callback(qname: str):
+            def callback(ch, method, props, body):
+                on_amqp_message(qname, ch, method, props, body)
+                if not auto_ack:
+                    ch.basic_ack(delivery_tag=method.delivery_tag)
+                    stats["acked"] += 1
+            return callback
+
+        client._channel.basic_qos(prefetch_count=1)
+        for qname in queues:
+            client._channel.basic_consume(
+                queue=qname,
+                on_message_callback=make_callback(qname),
+                auto_ack=auto_ack,
+            )
+            logger.info("Consumer subscribed queue=%s", qname)
+
+        queues_str = ", ".join(queues)
+        logger.info("Consumer running on queues=%s. Press Ctrl+C to stop.", queues_str)
+
+        # Use start_consuming() for reliable message delivery.
+        # pika BlockingConnection's process_data_events loop can miss
+        # consumer callbacks; start_consuming() is the proper blocking
+        # consume entrypoint that dispatches all queued messages.
+        try:
+            client._channel.start_consuming()
+        except (KeyboardInterrupt, OSError):
+            pass
     finally:
         print_stats()
         client.stop()
