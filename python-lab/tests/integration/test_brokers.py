@@ -121,8 +121,6 @@ class TestAmqpDirect:
             content_type="application/json",
         )
 
-        time.sleep(0.5)
-
         client._channel.basic_consume(
             queue=temp_queue,
             on_message_callback=callback,
@@ -146,11 +144,17 @@ class TestAmqpDirect:
 
 @skip_no_brokers
 class TestFullChain:
-    def test_heartbeat_through_bridge(self, settings, unique_id):
-        """Publish heartbeat via MQTT, verify it arrives at AMQP via Bridge."""
+    def _run_full_chain_test(self, settings, unique_id, amqp_queue,
+                             make_mqtt_msg, check_received):
+        """Run a full MQTT -> Bridge -> AMQP -> Consumer test.
+
+        Runs the AMQP process_data_events loop on the main thread (pika
+        BlockingConnection is not thread-safe) and publishes via MQTT from a
+        separate thread. ``check_received`` is called with the list of
+        received message bodies and must raise AssertionError on failure.
+        """
         received = []
 
-        # Start AMQP consumer on heartbeat queue
         amqp_client = AMQPClient(settings)
         amqp_client.connect()
 
@@ -160,127 +164,166 @@ class TestFullChain:
             ch.stop_consuming()
 
         amqp_client._channel.basic_consume(
-            queue=QUEUE_HEARTBEAT,
+            queue=amqp_queue,
             on_message_callback=callback,
             auto_ack=False,
         )
-
-        stop_event = threading.Event()
-
-        def amqp_loop():
-            while not stop_event.is_set():
-                try:
-                    amqp_client._connection.process_data_events(time_limit=0.5)
-                except Exception:
-                    break
-
-        amqp_thread = threading.Thread(target=amqp_loop, daemon=True)
-        amqp_thread.start()
 
         # Start Bridge
         bridge = Bridge(settings, validation_mode="permissive")
         bridge.connect()
         time.sleep(0.5)
 
-        # Publish heartbeat via MQTT
-        mqtt_client = MQTTClient(settings, client_id=f"test-mqtt-{unique_id}")
-        mqtt_client.connect()
-        time.sleep(0.3)
+        # Publish via MQTT from a separate thread
+        publish_done = threading.Event()
 
-        mod = get_heartbeat_module("permissive")
-        msg = mod.make_heartbeat(
-            message_id=str(uuid.uuid4()),
-            timestamp=current_timestamp(),
-            hostname="test-host",
-            cpu_load=0.42,
-            memory_used_percent=65.0,
-            uptime_seconds=1200.0,
-        )
-        payload = mod.serialize(msg)
-        mqtt_client.publish("lab/heartbeat", payload, qos=1)
+        def publish_mqtt():
+            try:
+                mqtt_client = MQTTClient(
+                    settings, client_id=f"test-mqtt-{unique_id}"
+                )
+                mqtt_client.connect()
+                time.sleep(0.3)
+                make_mqtt_msg(mqtt_client, unique_id)
+                mqtt_client.stop()
+            finally:
+                publish_done.set()
 
-        # Wait for message to arrive at AMQP
+        mqtt_thread = threading.Thread(target=publish_mqtt)
+        mqtt_thread.start()
+
+        # Consume on the main thread
         deadline = time.time() + 10
         while time.time() < deadline and not received:
-            time.sleep(0.2)
+            try:
+                amqp_client._connection.process_data_events(time_limit=0.5)
+            except Exception:
+                break
 
-        stop_event.set()
-        amqp_thread.join(timeout=2)
+        publish_done.wait(timeout=5)
         bridge.stop()
-        mqtt_client.stop()
+        mqtt_thread.join(timeout=2)
         amqp_client.stop()
 
-        assert len(received) == 1, f"Expected 1 message through bridge, got {len(received)}"
-        data = json.loads(received[0])
-        assert data["type"] == "heartbeat"
-        assert data["version"] == 1
+        check_received(received)
 
-    def test_command_alias_through_bridge(self, settings, unique_id):
-        """Publish command via MQTT, verify it arrives at AMQP via Bridge."""
+    def test_heartbeat_through_bridge(self, settings, unique_id):
+        """Publish heartbeat via MQTT, verify it arrives at AMQP via Bridge."""
+
+        def make_heartbeat(mqtt_client, uid):
+            mod = get_heartbeat_module("permissive")
+            msg = mod.make_heartbeat(
+                message_id=str(uuid.uuid4()),
+                timestamp=current_timestamp(),
+                hostname="test-host",
+                cpu_load=0.42,
+                memory_used_percent=65.0,
+                uptime_seconds=1200.0,
+            )
+            payload = mod.serialize(msg)
+            mqtt_client.publish("lab/heartbeat", payload, qos=1)
+
+        def check(received):
+            assert len(received) == 1, (
+                f"Expected 1 message through bridge, got {len(received)}"
+            )
+            data = json.loads(received[0])
+            assert data["type"] == "heartbeat"
+            assert data["version"] == 1
+
+        # Use a unique temp queue bound to heartbeat routing key to avoid
+        # interference from other tests sharing lab.heartbeat.
         received = []
-
+        temp_queue = f"test.heartbeat.{unique_id}"
         amqp_client = AMQPClient(settings)
         amqp_client.connect()
-
-        def callback(ch, method, props, body):
-            received.append(body)
-            ch.basic_ack(delivery_tag=method.delivery_tag)
-            ch.stop_consuming()
-
+        amqp_client._channel.queue_declare(
+            queue=temp_queue, durable=True, auto_delete=True
+        )
+        amqp_client._channel.queue_bind(
+            exchange="lab.events", queue=temp_queue, routing_key=ROUTING_KEY_HEARTBEAT
+        )
         amqp_client._channel.basic_consume(
-            queue=QUEUE_COMMANDS,
-            on_message_callback=callback,
+            queue=temp_queue,
+            on_message_callback=lambda ch, m, p, b: (
+                received.append(b),
+                ch.basic_ack(delivery_tag=m.delivery_tag),
+                ch.stop_consuming(),
+            ),
             auto_ack=False,
         )
 
-        stop_event = threading.Event()
-
-        def amqp_loop():
-            while not stop_event.is_set():
-                try:
-                    amqp_client._connection.process_data_events(time_limit=0.5)
-                except Exception:
-                    break
-
-        amqp_thread = threading.Thread(target=amqp_loop, daemon=True)
-        amqp_thread.start()
-
+        # Start Bridge
         bridge = Bridge(settings, validation_mode="permissive")
         bridge.connect()
         time.sleep(0.5)
 
-        mqtt_client = MQTTClient(settings, client_id=f"test-cmd-{unique_id}")
-        mqtt_client.connect()
-        time.sleep(0.3)
+        # Publish via MQTT from a separate thread
+        publish_done = threading.Event()
 
-        mod = get_command_module("permissive")
-        msg = mod.make_command(
-            message_id=str(uuid.uuid4()),
-            timestamp=current_timestamp(),
-            alias="status",
-            arguments={},
-        )
-        payload = mod.serialize(msg)
-        mqtt_client.publish("lab/commands", payload, qos=1)
+        def publish_mqtt():
+            try:
+                mqtt_client = MQTTClient(
+                    settings, client_id=f"test-mqtt-{unique_id}"
+                )
+                mqtt_client.connect()
+                time.sleep(0.3)
+                make_heartbeat(mqtt_client, unique_id)
+                mqtt_client.stop()
+            finally:
+                publish_done.set()
 
+        mqtt_thread = threading.Thread(target=publish_mqtt)
+        mqtt_thread.start()
+
+        # Consume on the main thread
         deadline = time.time() + 10
         while time.time() < deadline and not received:
-            time.sleep(0.2)
+            try:
+                amqp_client._connection.process_data_events(time_limit=0.5)
+            except Exception:
+                break
 
-        stop_event.set()
-        amqp_thread.join(timeout=2)
+        publish_done.wait(timeout=5)
         bridge.stop()
-        mqtt_client.stop()
+        mqtt_thread.join(timeout=2)
         amqp_client.stop()
 
-        assert len(received) == 1
-        data = json.loads(received[0])
-        assert data["type"] == "command"
-        assert data["payload"]["alias"] == "status"
+        check(received)
+
+    def test_command_alias_through_bridge(self, settings, unique_id):
+        """Publish command via MQTT, verify it arrives at AMQP via Bridge."""
+
+        def make_command(mqtt_client, uid):
+            mod = get_command_module("permissive")
+            msg = mod.make_command(
+                message_id=str(uuid.uuid4()),
+                timestamp=current_timestamp(),
+                alias="status",
+                arguments={},
+            )
+            payload = mod.serialize(msg)
+            mqtt_client.publish("lab/commands", payload, qos=1)
+
+        def check(received):
+            assert len(received) == 1, (
+                f"Expected 1 message through bridge, got {len(received)}"
+            )
+            data = json.loads(received[0])
+            assert data["type"] == "command"
+            assert data["payload"]["alias"] == "status"
+
+        self._run_full_chain_test(
+            settings, unique_id,
+            amqp_queue=QUEUE_COMMANDS,
+            make_mqtt_msg=make_command,
+            check_received=check,
+        )
 
     def test_plain_text_through_bridge(self, settings, unique_id):
         """Publish arbitrary text via MQTT, verify it arrives at AMQP via Bridge."""
         received = []
+        expected_text = f"plain text message {unique_id}"
 
         amqp_client = AMQPClient(settings)
         amqp_client.connect()
@@ -291,7 +334,9 @@ class TestFullChain:
             ch.stop_consuming()
 
         temp_queue = f"test.plain.{unique_id}"
-        amqp_client._channel.queue_declare(queue=temp_queue, durable=True, auto_delete=True)
+        amqp_client._channel.queue_declare(
+            queue=temp_queue, durable=True, auto_delete=True
+        )
         amqp_client._channel.queue_bind(
             exchange="lab.events", queue=temp_queue, routing_key="test"
         )
@@ -301,38 +346,43 @@ class TestFullChain:
             auto_ack=False,
         )
 
-        stop_event = threading.Event()
-
-        def amqp_loop():
-            while not stop_event.is_set():
-                try:
-                    amqp_client._connection.process_data_events(time_limit=0.5)
-                except Exception:
-                    break
-
-        amqp_thread = threading.Thread(target=amqp_loop, daemon=True)
-        amqp_thread.start()
-
+        # Start Bridge
         bridge = Bridge(settings, validation_mode="permissive")
         bridge.connect()
         time.sleep(0.5)
 
-        mqtt_client = MQTTClient(settings, client_id=f"test-text-{unique_id}")
-        mqtt_client.connect()
-        time.sleep(0.3)
+        # Publish via MQTT from a separate thread
+        publish_done = threading.Event()
 
-        test_text = f"plain text message {unique_id}"
-        mqtt_client.publish("lab/test", test_text, qos=1)
+        def publish_mqtt():
+            try:
+                mqtt_client = MQTTClient(
+                    settings, client_id=f"test-mqtt-{unique_id}"
+                )
+                mqtt_client.connect()
+                time.sleep(0.3)
+                mqtt_client.publish("lab/test", expected_text, qos=1)
+                mqtt_client.stop()
+            finally:
+                publish_done.set()
 
+        mqtt_thread = threading.Thread(target=publish_mqtt)
+        mqtt_thread.start()
+
+        # Consume on the main thread
         deadline = time.time() + 10
         while time.time() < deadline and not received:
-            time.sleep(0.2)
+            try:
+                amqp_client._connection.process_data_events(time_limit=0.5)
+            except Exception:
+                break
 
-        stop_event.set()
-        amqp_thread.join(timeout=2)
+        publish_done.wait(timeout=5)
         bridge.stop()
-        mqtt_client.stop()
+        mqtt_thread.join(timeout=2)
         amqp_client.stop()
 
-        assert len(received) == 1
-        assert received[0].decode("utf-8") == test_text
+        assert len(received) == 1, (
+            f"Expected 1 message through bridge, got {len(received)}"
+        )
+        assert received[0].decode("utf-8") == expected_text

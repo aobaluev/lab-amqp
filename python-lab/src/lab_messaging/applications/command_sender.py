@@ -15,6 +15,7 @@ import logging
 import signal
 import sys
 import time
+import uuid
 
 from lab_messaging.amqp.client import (
     AMQPClient,
@@ -190,6 +191,16 @@ def main() -> None:
 
     try:
         client.connect()
+
+        # Bind a temporary queue for the "test" routing key so that
+        # sample JSON and custom text messages are not returned as unroutable.
+        test_queue = f"lab.command.sender.test.{uuid.uuid4().hex[:8]}"
+        client._channel.queue_declare(queue=test_queue, durable=True, auto_delete=True)
+        client._channel.queue_bind(
+            exchange="lab.events", queue=test_queue, routing_key=ROUTING_KEY_TEST
+        )
+        logger.info("Bound temp queue=%s for routing_key=test", test_queue)
+
         main_menu(client, args.validation_mode)
     finally:
         client.stop()

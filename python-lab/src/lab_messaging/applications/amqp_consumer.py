@@ -131,6 +131,7 @@ def main() -> None:
     parser.add_argument("--auto-ack", action="store_true", help="Use automatic ACK")
     parser.add_argument("--log-level", default="INFO", help="Log level")
     args = parser.parse_args()
+    print(args)
 
     setup_logging(args.log_level)
 

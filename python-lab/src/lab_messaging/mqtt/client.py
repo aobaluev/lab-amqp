@@ -35,9 +35,13 @@ class MQTTClient:
         self._running = False
         self._loop_started = False
 
-        # Install signal handlers for graceful shutdown
-        signal.signal(signal.SIGINT, self._signal_handler)
-        signal.signal(signal.SIGTERM, self._signal_handler)
+        # Install signal handlers for graceful shutdown (main thread only)
+        try:
+            signal.signal(signal.SIGINT, self._signal_handler)
+            signal.signal(signal.SIGTERM, self._signal_handler)
+        except ValueError:
+            # signal handlers can only be installed in the main thread
+            pass
 
     def _signal_handler(self, signum, frame) -> None:
         logger.info("Received signal %s, shutting down...", signum)

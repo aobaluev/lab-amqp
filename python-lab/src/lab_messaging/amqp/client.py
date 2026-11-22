@@ -44,8 +44,13 @@ class AMQPClient:
         self._channel: Optional[pika.adapters.blocking_connection.BlockingChannel] = None
         self._running = False
 
-        signal.signal(signal.SIGINT, self._signal_handler)
-        signal.signal(signal.SIGTERM, self._signal_handler)
+# Install signal handlers for graceful shutdown (main thread only)
+        try:
+            signal.signal(signal.SIGINT, self._signal_handler)
+            signal.signal(signal.SIGTERM, self._signal_handler)
+        except ValueError:
+            # signal handlers can only be installed in the main thread
+            pass
 
     def _signal_handler(self, signum, frame) -> None:
         logger.info("Received signal %s, shutting down...", signum)
@@ -198,7 +203,7 @@ class AMQPClient:
         try:
             while self._running:
                 self._connection.process_data_events(time_limit=1)
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, OSError):
             pass
         finally:
             self.stop()
