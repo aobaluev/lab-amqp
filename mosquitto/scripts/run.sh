@@ -36,14 +36,22 @@ if [[ -z "${MQTT_PASSWORD:-}" || "$MQTT_PASSWORD" == CHANGE_ME* ]]; then
 fi
 
 mkdir -p config
-echo "Generating config/passwd with mosquitto_passwd ..."
-umask 077
-docker run --rm \
-  --user "$(id -u):$(id -g)" \
-  -v "$PROJECT_DIR/config:/mosquitto/config" \
-  --entrypoint mosquitto_passwd \
-  "$IMAGE" -c -b /mosquitto/config/passwd "$MQTT_USER" "$MQTT_PASSWORD"
-chmod 644 config/passwd
+
+# Generate password file only if it does not exist.
+# Do not use -c (create) when the file already exists: mosquitto_passwd -c
+# refuses to overwrite an existing file and would break repeated runs.
+if [[ ! -f config/passwd ]]; then
+  echo "Generating config/passwd with mosquitto_passwd ..."
+  umask 077
+  docker run --rm \
+    --user "$(id -u):$(id -g)" \
+    -v "$PROJECT_DIR/config:/mosquitto/config" \
+    --entrypoint mosquitto_passwd \
+    "$IMAGE" -c -b /mosquitto/config/passwd "$MQTT_USER" "$MQTT_PASSWORD"
+  chmod 644 config/passwd
+else
+  echo "config/passwd already exists; keeping existing credentials."
+fi
 
 echo "Starting $PROJECT_NAME ..."
 "${COMPOSE[@]}" up -d

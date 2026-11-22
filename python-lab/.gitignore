@@ -1,0 +1,33 @@
+# Secrets and credentials
+.env
+*/.env
+!**/.env.example
+
+# Virtual environment
+.venv/
+venv/
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Runtime data and logs
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+# Editor directories
+.vscode/
+.idea/
+
+# uv (uv.lock is committed for reproducible builds)

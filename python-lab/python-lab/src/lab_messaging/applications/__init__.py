@@ -1,0 +1,1 @@
+"""lab_messaging.applications package."""
