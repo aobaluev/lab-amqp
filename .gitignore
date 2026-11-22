@@ -1,0 +1,18 @@
+# Secrets and credentials
+.env
+*/.env
+!**/.env.example
+config/passwd
+**/config/passwd
+
+# Runtime data, logs and temporary files
+data/
+log/
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+# Editor directories
+.vscode/
+.idea/
