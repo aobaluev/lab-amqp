@@ -1,0 +1,13 @@
+{
+  "type": "heartbeat",
+  "version": 1,
+  "message_id": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": 1795364383.843454,
+  "datetime": "2026-11-22T10:00:00Z",
+  "payload": {
+    "hostname": "lab-dockers",
+    "cpu_load": 0.42,
+    "memory_used_percent": 65.2,
+    "uptime_seconds": 12000
+  }
+}
