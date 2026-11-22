@@ -1,0 +1,30 @@
+name: lab-amqp-rabbitmq
+
+services:
+  rabbitmq:
+    image: rabbitmq:4.3.8-management
+    container_name: lab-amqp-rabbitmq
+    # RabbitMQ uses the hostname as its node name (rabbit@<hostname>).
+    # Pinning it keeps the node name stable across container recreation,
+    # so the data directory in the persistent volume is reused.
+    hostname: lab-amqp-rabbitmq
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "5672:5672"
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./config/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+    stop_grace_period: 30s
+
+volumes:
+  rabbitmq_data:
+    name: lab-amqp-rabbitmq-data

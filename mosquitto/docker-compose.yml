@@ -1,0 +1,23 @@
+name: lab-amqp-mosquitto
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.1.4-alpine
+    container_name: lab-amqp-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./config:/mosquitto/config:ro
+      - mosquitto_data:/mosquitto/data
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 1883 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    stop_grace_period: 10s
+
+volumes:
+  mosquitto_data:
+    name: lab-amqp-mosquitto-data
